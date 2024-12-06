@@ -1,0 +1,112 @@
+9970046450440892191
+1000000000000000000000
+
+999500749961940084683
+500000000000000000
+
+ uint160 sqrtPriceX96 = SQRT_PRICE_1_1;
+        uint160 sqrtPriceAtTickLower = TickMath.getSqrtPriceAtTick(-60);
+        uint160 sqrtPriceAtTickUpper = TickMath.getSqrtPriceAtTick(60);
+
+        uint256 daiToAdd = 100 ether;
+
+        uint128 liquidityDelta =
+            LiquidityAmounts.getLiquidityForAmount0(sqrtPriceAtTickLower, sqrtPriceAtTickUpper, daiToAdd);
+
+        uint256 usdcToAdd =
+            LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceAtTickLower, sqrtPriceAtTickUpper, liquidityDelta);
+
+        vm.startPrank(user2);
+
+        // Approve the router to spend tokens
+        dai.approve(address(modifyLiquidityRouter), daiToAdd);
+        usdc.approve(address(modifyLiquidityRouter), usdcToAdd);
+
+        modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({
+                tickLower: -60,
+                tickUpper: 60,
+                liquidityDelta: int256(uint256(liquidityDelta)),
+                salt: bytes32(0)
+            }),
+            abi.encode(user2, idoId)
+        );
+        vm.stopPrank();
+
+         function test_swap() public {
+        // Retrieve IDO details from the hook contract
+        (,,, uint256 startTime,) = hook.idos(idoId);
+
+        // Ensure the IDO is active
+        vm.warp(startTime + 1);
+
+        // Add more substantial liquidity
+        uint160 sqrtPriceX96 = SQRT_PRICE_1_1;
+        uint160 sqrtPriceAtTickLower = TickMath.getSqrtPriceAtTick(-60);
+        uint160 sqrtPriceAtTickUpper = TickMath.getSqrtPriceAtTick(60);
+
+        // Increase liquidity amount
+        uint256 daiToAdd = 100 ether;
+        uint256 usdcToAdd = 100 ether;
+
+        uint128 liquidityDelta =
+            LiquidityAmounts.getLiquidityForAmount0(sqrtPriceAtTickLower, sqrtPriceAtTickUpper, daiToAdd);
+
+        vm.startPrank(user1);
+
+        // Approve tokens for liquidity
+        dai.approve(address(modifyLiquidityRouter), daiToAdd);
+        usdc.approve(address(modifyLiquidityRouter), usdcToAdd);
+
+        // Add liquidity
+        modifyLiquidityRouter.modifyLiquidity(
+            key,
+            IPoolManager.ModifyLiquidityParams({
+                tickLower: -60,
+                tickUpper: 60,
+                liquidityDelta: int256(uint256(liquidityDelta)),
+                salt: bytes32(0)
+            }),
+            abi.encode(user1, idoId)
+        );
+        vm.stopPrank();
+
+        // Print initial balances
+        console.log("User1 DAI balance before swap:", dai.balanceOf(user1));
+        console.log("User1 USDC balance before swap:", usdc.balanceOf(user1));
+
+        vm.startPrank(user1);
+
+        // Debug: Check router address and approvals
+        console.log("Swap Router Address:", address(swapRouter));
+        console.log("User1 DAI Approval to Router:", dai.allowance(user1, address(swapRouter)));
+
+        // Approve swap router to spend tokens
+        // dai.approve(address(swapRouter), type(uint256).max);
+
+        // Perform swap with exact input
+        int256 swapAmount = -3 ether;
+        swapRouter.swap(
+            key,
+            IPoolManager.SwapParams({
+                zeroForOne: true,
+                amountSpecified: swapAmount,
+                sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
+            }),
+            PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}),
+            abi.encode(user1, idoId)
+        );
+        vm.stopPrank();
+
+        // Print balances after swap
+        console.log("user2 allocation", hook.getUserAllocation(user2, idoId));
+        console.log("user1 allocation", hook.getUserAllocation(user1, idoId));
+        console.log("total allcoation ", hook.totalShares());
+        console.log("user1 shares", hook.getUserShares(user1));
+        console.log("user2 shares", hook.getUserShares(user2));
+        // console.log("User1 DAI balance after swap:", dai.balanceOf(user1));
+        // console.log("User1 USDC balance after swap:", usdc.balanceOf(user1));
+    }
+
+    if for example i add 100 token as allocation, and base on user 1 being first to add liquidity or swap they get 100 as total allocation, but if user two add same amount as user , then they both have a 50 50 allocation, so when claiming when user 1 claims he get 50 tokens from the allocation, from my contract user2 allocation becomes 100 and there is 50 tokens left so if user 2 tries to withdraw it will fail because his allocation adjusted to 100 after user1 withdrawal instead of remaining 50 which is his original allocation, what i say you should help me do is even when withdrawal are made after claim i want the next person to actually get their allocation not the protocol rebalancing and making them have 100% allocation
