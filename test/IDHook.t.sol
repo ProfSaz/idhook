@@ -194,7 +194,7 @@ contract TestIDHook is Test, Deployers {
         );
         assert(hook.getUserShares(user1) > hook.getUserShares(user2));
 
-        // Print balances after swap
+        // balances after swap
         // console.log("user2 allocation", hook.getUserAllocation(user2, idoId));
         // console.log("user1 allocation", hook.getUserAllocation(user1, idoId));
         // console.log("total allocation", totalAllocation);

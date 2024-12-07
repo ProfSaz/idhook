@@ -96,17 +96,7 @@ contract IDHook is BaseHook {
         return (this.afterAddLiquidity.selector, delta);
     }
 
-    function afterRemoveLiquidity(
-        address,
-        PoolKey calldata key,
-        IPoolManager.ModifyLiquidityParams calldata,
-        BalanceDelta delta,
-        BalanceDelta,
-        bytes calldata hookData
-    ) external override returns (bytes4, BalanceDelta) {
-        (address user, bytes32 idoId) = abi.decode(hookData, (address, bytes32));
-        require(_matchesPoolKey(key, idos[idoId].key), "Invalid PoolKey for this IDO");
-    }
+   
 
     //probably use keccak to get byteId
     function registerIDO(
