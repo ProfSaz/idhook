@@ -58,7 +58,7 @@ contract TestIDHook is Test, Deployers {
         usdc.mint(user1, 1000 ether);
         idoToken.mint(launcher, 3000 ether);
 
-        uint160 flags = uint160(Hooks.AFTER_ADD_LIQUIDITY_FLAG | Hooks.AFTER_SWAP_FLAG);
+        uint160 flags = uint160(Hooks.AFTER_ADD_LIQUIDITY_FLAG| Hooks.AFTER_REMOVE_LIQUIDITY_FLAG | Hooks.AFTER_SWAP_FLAG);
         deployCodeTo("IDHook.sol", abi.encode(manager, idoVault), address(flags));
 
         hook = IDHook(address(flags));
@@ -116,9 +116,9 @@ contract TestIDHook is Test, Deployers {
         uint256 usdcToAdd =
             LiquidityAmounts.getAmount1ForLiquidity(sqrtPriceAtTickLower, sqrtPriceAtTickUpper, liquidityDelta);
 
-        console.log("Liquidity Delta:", liquidityDelta);
-        console.log("DAI to Add:", daiToAdd);
-        console.log("USDC to Add:", usdcToAdd);
+        // console.log("Liquidity Delta:", liquidityDelta);
+        // console.log("DAI to Add:", daiToAdd);
+        // console.log("USDC to Add:", usdcToAdd);
 
         vm.startPrank(user1);
 
@@ -138,7 +138,6 @@ contract TestIDHook is Test, Deployers {
         );
         vm.stopPrank();
 
-        // console.log("user1 allocation", hook.getUserAllocation(user1, idoId));
 
         vm.startPrank(user2);
 
@@ -160,11 +159,12 @@ contract TestIDHook is Test, Deployers {
         assertEq(hook.getUserAllocation(user2, idoId) + hook.getUserAllocation(user1, idoId), totalAllocation);
         assertEq(hook.getUserShares(user1) + hook.getUserShares(user2), hook.totalShares());
 
-        // console.log("user2 allocation", hook.getUserAllocation(user2, idoId));
-        // console.log("user1 allocation", hook.getUserAllocation(user1, idoId));
-        // console.log("total allcoation ", hook.totalShares());
-        // console.log("user1 shares", hook.getUserShares(user1));
-        // console.log("user2 shares", hook.getUserShares(user2));
+        console.log("user2 allocation", hook.getUserAllocation(user2, idoId));
+        console.log("user1 allocation", hook.getUserAllocation(user1, idoId));
+        console.log("total allcoation ", totalAllocation);
+        console.log(" total shares ", hook.totalShares());
+        console.log("user1 shares", hook.getUserShares(user1));
+        console.log("user2 shares", hook.getUserShares(user2));
     }
 
     function test_swap() public {
